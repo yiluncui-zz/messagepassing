@@ -1,0 +1,65 @@
+<html>
+<title>Accept</title> 
+
+<link href="main.css" rel="stylesheet" type="text/css" />
+
+<script type="text/javascript" src="signaling.js"></script>
+
+<script>
+
+window.onload = function() {
+    if (! window.webkitPeerConnection) {
+        window.location = "nosupport.html";
+    }
+}
+
+
+
+var connectingStatus;
+var watchdog;
+
+function watchdogExpired() {
+    alert("The connection could not be established. If you or your peer are behind a firewall, its configuration may need to be updated. Success is most probable if both peers are on the same network.");
+}
+
+function acceptClicked() {
+    document.getElementById('content').hidden = true;
+    connectingStatus = document.getElementById('connectingStatus');
+    connectingStatus.hidden = false;
+
+    watchdog = setTimeout("watchdogExpired()", 1000 * 30);
+
+    Signaling.onopen = function() {
+        connectingStatus.hidden = true;
+        clearTimeout(watchdog);
+        document.getElementById('chat').hidden = false;
+        self.chat.startChat();
+    }
+
+    Signaling.create(function(url, fifoId) {
+        // get FIFO id from the url, accepting any variable name to refer to it
+        var url = window.location.toString();
+        len=url.length;
+        offset = url.indexOf("?");
+        params = url.substr(offset,len);
+        paramList = params.split("=");
+
+        Signaling.accept(paramList[1]);
+    }, "guest");
+}
+
+</script>
+
+<body>
+
+  <form id="content">
+    Press accept!!
+    <input type="button" onclick="acceptClicked();" value="Accept invitation"/>
+  </form>
+
+  <div id="connectingStatus" hidden="true">Connecting...</div>
+
+  <iframe id="chat" name="chat" src="chat.html" hidden="true"></iframe>
+
+</body>
+</html> 

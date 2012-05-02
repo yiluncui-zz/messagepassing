@@ -1,0 +1,79 @@
+<html>
+<title>Create Video Chat</title> 
+
+<link href="main.css" rel="stylesheet" type="text/css" />
+
+<script type="text/javascript" src="signaling.js"></script>
+
+<script>
+
+var invitationUrl;
+
+var mailtoTemplateStart = '<a href="';
+var mailtoTemplateEnd   = '">click here to join the chat session</a>';
+
+window.onload = function() {
+    if (! window.webkitPeerConnection) {
+        window.location = "nosupport.html";
+    }
+
+    invitationUrl = document.getElementById('invitationUrl');
+
+    Signaling.onopen = function() {
+        invitationUrl.hidden = true;
+        document.getElementById('chat').hidden = false;
+        self.chat.startChat();
+    }
+
+
+    Signaling.onopen2 = function() {
+        invitationUrl.hidden = true;
+        document.getElementById('chat').hidden = false;
+        self.chat.startChat2();
+    }
+}
+
+
+ // verify(): captcha verification 
+    function verify() { 
+	var verifyClient = new XMLHttpRequest();
+	verifyClient.open("POST", "verifycap.php?" + user_code, true);
+	verifyClient.send(null);
+	verifyClient.onreadystatechange = function () {
+	    if (this.readyState === 4 && this.status === 200) {     		    
+		if (this.responseText="valid") {
+                    document.getElementById('content').hidden = false;
+		    Signaling.create(function(url, fifoId) {
+        	    invitationUrl.value = url;
+        	    document.getElementById('mailtolink').href = "mailto:?Subject=Invitation&body=" + encodeURIComponent(mailtoTemplateStart) + url + encodeURIComponent(mailtoTemplateEnd);
+    });
+		}
+		else {alert("invalid code entered");}
+	    }
+	};
+    }
+
+</script>
+
+<body>
+
+  <div id="cap">
+
+
+    <form>
+       <label>Please verify</label>
+       <input type="text" name="user_code" id="user_code" />
+       <input type="button" onclick="verify();" value="Verify Code"/>
+    </form>
+  </div>
+
+  <div id="content" hidden="true">
+    <p>Paste this to your peers</p>
+
+    <input type="text" id="invitationUrl" readonly size=80></input>
+  </div>
+
+  <iframe id="chat" name="chat" src="chat.html" hidden="true"></iframe>
+</div>
+</body>
+</html> 

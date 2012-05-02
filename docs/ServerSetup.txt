@@ -1,0 +1,310 @@
+Getting started wiht WebRTC
+===========================
+
+Introduction
+------------
+With WebRTC, adding a peer-to-peer video chat to a site is as easy as child's play and the best part of it is that there is no need for your users to download plugins to use the service.
+
+There are two pieces needed to set up peer-to-peer video chat using WebRTC; an HTML5 compliant browser, and the proper code on your server. This article will walk you through the steps to get up a simple service up and running.
+
+WebRTC is part of the HTML5 standard and is still under development, but by downloading an augmented WebKit library from [Ericsson Labs](https://labs.ericsson.com) you can try it out today. At present, only 32bit Ubuntu 11.04 is supported for the browser, but there are no such restrictions on the server. For simplicity I'll assume that the server will run the same machine as at least one of the clients.
+
+
+
+Installing the browser
+---------------------
+To install the browser, follow the steps [here](https://labs.ericsson.com/apis/web-real-time-communication/downloads). You can choose to use Epiphany or a simple demo browser (GtkLauncher) for your tests, but for this tutorial I'll use GtkLauncer. To make sure it was installed correctly, fire up a terminal window and go to the WebRTC demo page at Ericsson Labs using the following command:
+
+	/usr/lib/webkitgtk-1.0-0/libexec/GtkLauncher https://webrtc.labs.ericsson.net
+
+If you see a page with a Captcha, you're all set to go, but if you see a warning that your browser lacks support for PeerConnection video conferencing you need to track down the problem. See the [install page](https://labs.ericsson.com/apis/web-real-time-communication/documentation) for hints.
+
+*Note that the following steps are only required if you want to host the signaling server yourself. If you don't, just use the one on [Ericsson Labs](https://labs.ericsson.com/apis/web-real-time-communication).*
+
+Setting up the server
+---------------------
+With the browser part cleared, we'll now turn to the server setup. First, there are a number of prerequisites that need to be fulfilled. You'll need Apache2, php5, and some supporting modules. Use apt-get to install them by:
+
+	sudo apt-get install apache2 libapache2-mod-php5 php5-dev php-pear
+
+Then, install libevent:
+
+	sudo apt-get install libevent-dev
+
+Finally, you have to add the PHP module for libevent using PECL, but first you have to change some of the PECL settings. You can show the PECL setting using the command
+
+	pecl config-show
+
+If you're behind a proxy, the first thing to add is
+
+	pear config-set http_proxy http://myproxy.my.org:8080/
+
+where you substitute your proxy and port number. Two things to note is that the command is `pear`, not `pecl`, and that the trailing slash is mandatory.
+
+Next, libevent is considered beta so you need to make pecl aware of that
+
+	pecl config-set preferred_state beta
+
+before the install step
+
+	sudo pecl install libevent
+
+During the install, you will be presented with a question, just hit return to accept the default (autodetect).
+
+If the installer reports that it couldn't update your `php.ini` file, you'll have to do so manually. Open the file using the command
+
+	sudo pico /etc/php5/apache2/php.ini
+
+locate the section "Dynamic Extensions", and add the line
+
+	extension=libevent.so
+
+Now save the file.
+
+### Captcha support (optional)
+If your server is accessible from the outside world, you might want to add a Captcha to provide some protection from evil. The following steps will set you up with the necessary support. Note that if you skip this part, you'll need to comment out a section in the code provided for this tutorial, see below.
+
+	sudo apt-get install php5-gd libfreetype6 flite
+
+### Final step
+During the connection phase, the server will create FIFO's and we need a suitable place to do so, and we also have to make sure that the server has the permission to create the FIFOs.
+
+	sudo mkdir /var/run/starchat
+	sudo chown :www-data /var/run/starchat
+	sudo chmod g+w /var/run/starchat
+
+Unfortunately, there is a known bug in the server code that prevents us from cleaning up the FIFOs automatically, so for now we need to use a `cron` job to delete stale FIFO periodically. Use the command
+
+	crontab -e
+
+to start an editor seesion, and add the following line to the `crontab` file
+
+	0 12 * * 0 find /var/run/starchat -mtime +1 -exec rm -f {} \;
+
+and save the file. Now all FIFOs older than 24 hours will be removed on a regular basis.
+
+
+All that is left to do before continuing with the fun parts, is to restart the webserver.
+
+	sudo /etc/init.d/apache2 restart
+
+The videochat server code
+-------------------------
+The [complete code](http://files.labs.ericsson.net/apis/web-real-time-communication/videochat-example.zip) for this tutorial can be downloaded from Ericsson Labs. Next comes a quickstart guide, followed by a longer section detailing the different parts of the implementation.
+
+
+### Quickstart guide
+To install it to the server, `cd` into the directory where the zip file was downloaded and issue the command
+
+	sudo unzip videochat-example.zip -d /var/www/
+
+NB. If you didn't install Captcha support during the server setup part, you must comment out the captcha code in `create.html` and change the hidden property of the `content` div to `false`, like so:
+
+	<!--
+	<div id="cap">
+    <form>
+       <p><img src=visual-captcha.php width="200" height="60" alt="Visual CAPTCHA" /></p>
+       <p><a href="audio-captcha.php">Can't see the image? Click for audible version</a></p>
+       <label>Enter the contents of image</label>
+       <input type="text" name="user_code" id="user_code" />
+       <input type="button" onclick="verify();" value="Verify Code"/>
+    </form>
+  	</div>
+	-->
+  	<div id="content" hidden="false">
+
+
+To test your setup, start a browser
+
+	/usr/lib/webkitgtk-1.0-0/libexec/GtkLauncher http://localhost/videochat-example &
+
+enter the captcha, and you'll be presented with a invitation link. Copy the link and start a second browser with the link as the argument
+
+
+	/usr/lib/webkitgtk-1.0-0/libexec/GtkLauncher <invitation link> &
+
+When you click accept in the second browser, you should get a media selection dialog and once you click `OK` your video chat session should start.
+
+### Code walktrough
+
+The code conceptually is split in two parts, signaling and the peer-to-peer videochat. Let's start by looking at the signaling. The sequence of events are shown below.
+
+1. Caller
+	* creates a FIFO on the server for listening.
+	* adds the FIFO as an event source.
+	* generates an invitation URL.
+2. Caller passes the invitation URL to the callee.
+3. Callee
+	* parses the invitation URL to obtain the remote (caller) FIFO
+	* creates a FIFO on the server for listening
+	* sends a signaling message with it's local FIFO to the caller
+	* creates a peer connection
+4. Caller
+	* receives the remote FIFO from the callee
+	* creates a peer connection
+
+Now the signaling channels and the peer-to-peer connection has been set up and both caller and callee can begin the chat session.
+
+
+Let's take a closer look at the code used in step above steps. (Note that the code below only reflects the parts relevant to this discussion).
+
+#### Step 1
+
+The process starts out when the caller load `create.hml` which contains a text field for the invitation URL and an (initially hidden) iframe with the chat code. The window.onload method is set up to call createFIFO (in `signaling.js`) with an anonymous function to create an invitation URL from the FIFO name passed as a parameter.
+
+	-- create.html --
+
+	<script>
+	window.onload = function() {
+		Signaling.createFIFO(function(fifoid) {
+			var url_base = location.href.substring(0,location.href.lastIndexOf('/'));
+			var url = url_base + "/accept.html?id=" + fifoid;
+			document.getElementById('invitationUrl').value = url;
+		});
+
+	}
+	</script>
+	<body>
+		<input type="text" id="invitationUrl" readonly size=80></input>
+		<iframe id="chat" name="chat" src="chat.html" hidden="true"></iframe>
+	</body>
+
+
+The createFIFO method send an XHR for a new named FIFO to the server. When the server responds, the FIFO name is retrieved and stored. Next, an event source is set up that will call `onSigMsg()` whenever the peer writes something to the FIFO.
+
+	-- signaling.js --
+
+	createFIFO: function(on_fifo_created) {
+		var createClient = new XMLHttpRequest();
+		createClient.open("GET", "create.php", true);
+		createClient.send(null);
+
+		createClient.onreadystatechange = function () {
+			Signaling.fifoId = this.responseText;
+			Signaling.eventSrc = new EventSource("recv.php?id=" + Signaling.fifoId);
+			Signaling.eventSrc.addEventListener("message", Signaling.onSigMsg);
+
+			on_fifo_created(Signaling.fifoId);
+		};
+    },
+
+
+The PHP code to create the named FIFO is simple enough,
+
+	-- create.php --
+
+    $fifoid=uniqid("id", true);
+    posix_mkfifo("/var/run/starchat/$fifoid", 0600) or die("cannot open FIFO");
+    echo "$fifoid";
+
+
+but the code for the event source could need some explanation.
+
+Here we are using libevent to listen to the FIFO and echo incoming messages to trigger an event on incoming messages. Ideally, this code should really have the `EV_PERSIST` flag merged in, but PHP (or Apache, or something else) seems to buffer things a bit too much, and the browser ends up getting nothing. This solution is inefficient, but works.
+
+	-- recv.php --
+
+    function print_line($fd, $events, $args) {
+        echo fgets($fd);
+    }
+
+    $fd = fopen("/var/run/starchat/".$_GET["id"], "r");
+
+    $base = event_base_new();
+    $event = event_new();
+    event_set($event, $fd, EV_WRITE, "print_line");
+
+    event_base_set($event, $base);
+    event_add($event);
+    event_base_loop($base);
+
+The biggest drawback however, is that we lose the opportunity to remove the FIFO through libevent's shutdown callback, so the number of FIFOs will grow over time, and they will need to be cleaned out somehow. That is what the cron job described above is used for.
+
+#### Step 2
+Caller writes down invitation URL on tiny piece of paper and sticks to homing pigeon owned by callee. E-mail, IM, or chat could be made to work as well.
+
+#### Step 3
+When the callee follows the invitation URL which is of the form `http://server.org/webrtc/accept.html?id=foo2873687236.4235893`, it is processed by `acceptClicked()` as soon as the accept button is clicked. The first step is to retrieve the remote (caller) FIFO id from the URL, call createFIFO() to create a (callee) FIFO with ananymous function that generates a call to `Signaling.accept()` once the FIFO is created.
+
+	-- accept.html --
+
+	<script>
+	function acceptClicked() {
+		var url = window.location.toString();
+		var paramList = url.substr(url.indexOf("?"), url.length).split("=");
+		var remotefifoid = paramList[1];
+
+		Signaling.createFIFO(function(fifoid) {
+			Signaling.accept(remotefifoid);
+		});
+	}
+	</script>
+	<body>
+		<input type="button" onclick="acceptClicked();" value="Accept invitation"/>
+		<iframe id="chat" name="chat" src="chat.html" hidden="true"></iframe>
+	</body>
+
+The accept method in takes the remote FIFO id as a parameter and stores it away locally. It then calls `sendSigMsg()` with the newly created (callee) FIFO as parameter to pass it over to the caller. The method `sendSigMsg()` triggers an XHR for writing its argument to the remote FIFO using `post.php`. Next, a peer connection is created, with `sendSigMsg()` as the handler for signaling messages.
+
+
+	-- signaling.js --
+
+    accept : function(remoteFifoId) {
+		Signaling.remoteFifoId = remoteFifoId;
+		Signaling.sendSigMsg("" + Signaling.fifoId);
+
+		Signaling.Peer = new webkitPeerConnection(Signaling.TURN_CONFIG, Signaling.sendSigMsg);
+    },
+
+    sendSigMsg : function(msg) {
+		var sendClient = new XMLHttpRequest();
+		sendClient.onreadystatechange = function() {};
+		sendClient.open("POST", "post.php", true);
+		sendClient.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+		sendClient.send("id=" + Signaling.remoteFifoId + "&msg=" + encodeURIComponent(msg), true);
+    },
+
+
+Finally, `post.php` is the opposite of `recv.php` and takes two arguments, a FIFO id, and a message to send. Writing the message to the FIFO, belonging to the peer, will trigger an event in the peer.
+
+	-- post.php --
+
+	$fifoid = $_POST["id"];
+    $msgArray = array ( "msgBody" => $_POST["msg"] );
+    $fd = fopen("/var/run/starchat/$fifoid", "w");
+    fputs($fd, "data: " . json_encode($msgArray) . "\n");
+    fclose($fd);
+
+#### Step 4
+The fourth and final step is when the caller receives the signaling message with the FIFO id of the callee. This time around the message arrives in an event triggered by the callee writing to the caller FIFO, so the message has to be handled in onSigMsg(). Since this is first message to arrive, it can be intercepted and the callee FIFO id is retrieved and stored before the caller peer connection is created.
+
+The internal state is then changed so that subsequent messages are passed to the peer connection for processing.
+
+	-- signaling.js --
+	onSigMsg : function (event) {
+		var msg = JSON.parse(event.data).msgBody;
+
+		switch (Signaling.fifo_state) {
+		case Signaling.FIFO_STATE_CREATED:
+			// The inviter just received its first message.
+			Signaling.remoteFifoId = msg;
+			Signaling.fifo_state = Signaling.FIFO_STATE_ACCEPTED;
+
+			Signaling.Peer = new webkitPeerConnection(Signaling.TURN_CONFIG, Signaling.sendSigMsg);
+			break;
+
+		case Signaling.FIFO_STATE_ACCEPTED:
+			Signaling.Peer.processSignalingMessage(msg);
+			break;
+		}
+    },
+
+### The chat application
+The chat application resides in `chat.html` and the techniques used are explained in detail at [Ericsson Labs](https://labs.ericsson.com/apis/web-real-time-communication/documentation).
+
+
+----
+
+Have fun!
+
+

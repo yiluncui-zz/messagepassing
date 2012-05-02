@@ -1,0 +1,269 @@
+<html>
+
+<link href="chat.css" rel="stylesheet" type="text/css" />
+<link href="jquery.notice.css" rel="stylesheet" type="text/css" />
+<link href="canvas.css" rel="stylesheet" type="text/css"/>
+
+
+<script>
+
+var content;
+var Signaling = top.Signaling;
+var chatHistory;
+var chatMessage;
+
+</script>
+
+<script src="UnionDraw.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<script src="jquery.notice.js"></script>
+
+<script>
+
+/*
+window.onload = function() {
+
+    chatHistory  = document.getElementById('chatHistory');
+    chatMessage  = document.getElementById('chatMessage');
+}*/
+
+
+function startChat() {
+    console.log("inside start chat");
+    for(chatIndex in Signaling.chatReady) {
+	if(Signaling.chatReady[chatIndex] == true) {
+	    //content.hidden = false;
+	    //document.getElementById('videoForm').hidden = false;
+	    
+	    Signaling.Peer[chatIndex].onmessage   = receiveChatMessage;
+	    //Signaling.Peer[chatIndex].onaddstream = receiveVideoStream;
+	    
+	    /*if(chatHistory.value && chatHistory.value.length != 0) {
+	      var hist = { prevHistory : chatHistory.value };
+	      Signaling.Peer[chatIndex].send(JSON.stringify(hist));
+	      }*/
+	    
+	    Signaling.chatReady[chatIndex] = false;
+	    
+	    //alert("starting chat with: " + chatIndex);
+	    
+	    /* Create a canvas for the new peer who we just connected with */
+	    createPeerCanvas2(chatIndex);
+	    init_canvas_context();
+	    console.log("after init canvas");
+	    if((Signaling.drawHistory.length != 0))
+	    {
+	    	
+	    	var historyLength = Signaling.drawHistory.length;
+	    	console.log("sending history to new element, length is :" + historyLength);
+	    	
+	    	//var contents = {"command" : DrawingCommands.HISTORY, "path" : Signaling.drawHistory.join("|"), "sendingPeer" : Signaling.fifoId};
+	    	for(var i =0; i< Signaling.drawHistory.length; i++)
+	    	{
+		    var historyContents = Signaling.drawHistory[i]; 
+	    	    var contents = {"command" : DrawingCommands.HISTORY , "history" : historyContents };
+	    	    //console.log("contents are :" + contents);
+		    Signaling.Peer[chatIndex].send(JSON.stringify(contents));
+		    //console.log("here2!!");
+	    	}		
+	    }
+	    jQuery.noticeAdd({
+		text : "connected with "+ Signaling.peerName[chatIndex],
+		stay : false
+	    });
+	}
+    }
+    console.log("leaving start chat");
+}
+
+
+/* -------------------------------------------------------------------------
+ * Instant messaging
+ * ------------------------------------------------------------------------- */
+
+function receiveChatMessage(e) {
+    var contents = JSON.parse(e.data);
+    
+    if(contents.command)
+    {
+	Signaling.drawHistory.push(e.data);	
+	var path = contents.path;
+	console.log("command is : " + contents.command);
+	
+	if(contents.command == DrawingCommands.MOVE_TO)
+	{
+	    console.log("a move command is received");
+	    handleMoveMessage(path,contents.sendingPeer);
+	}
+	else if (contents.command == DrawingCommands.LINE_TO)
+	{
+	    console.log("a line to command is received");
+	    handlePathMessage(path,contents.sendingPeer);
+	}                
+	else if (contents.command == DrawingCommands.REC)
+	{
+	    console.log("a REC command is received");
+	    handleRecMessage(path,contents.sendingPeer);
+	}
+	else if (contents.command == DrawingCommands.SET_COLOR)
+	{
+	    console.log("a  SET_COLOR command is received");
+	    handleColorMessage(path,contents.sendingPeer);
+	}
+	else if (contents.command == DrawingCommands.HISTORY)
+	{
+	    console.log("a history command is received" );
+	    handleHistoryMessage(contents.history);
+	    //if(Signaling.seenHistory == false)
+	    //{
+	    //Signaling.seenHistory = true;
+	    /*The path value here is actually a comma separated string of commands */
+	    
+	    //}	
+        } 
+        else if (contents.command == DrawingCommands.ERA)
+        {
+            console.log("an ERA command is received");
+            handleERAMessage(contents.path,contents.sendingPeer);
+        }
+	else
+	{
+	    console.log("something unusual");
+	}		
+    }
+    
+    if(contents.prevHistory) {
+	if(!chatHistory.value || chatHistory.value.length == 0) { 
+	    chatHistory.value += contents.prevHistory;
+	}
+    }
+    else {
+	chatHistory.value += contents.message + "\n";
+    }
+}
+
+function sendChatMessage() {
+    chatMessage.value = Signaling.fifoId + " : " + chatMessage.value;
+    chatHistory.value +=  chatMessage.value + "\n";
+    var contents = { message : chatMessage.value };
+    for(i in Signaling.Peer) 
+    {
+	Signaling.Peer[i].send(JSON.stringify(contents));
+    }
+    chatMessage.value = "";
+}
+
+function hide() 
+{
+    var name=prompt("Please enter your name","");
+    if (name!=null && name!="")
+    {
+  	console.log("fifo id entered to hide!!:" + name);
+  	var div_to_hide = document.getElementById(name);
+  	console.log("peer to hide is :" + div_to_hide);
+  	
+  	if(div_to_hide.style.display == "block")
+  	{
+  	    div_to_hide.style.display="none";
+  	}
+  	else
+  	{
+  	    div_to_hide.style.display="block";
+  	}	
+    }
+    else
+    {
+  	alert("You didn't enter anything!");
+    }   
+}
+/* -------------------------------------------------------------------------
+ * Voice & video
+ * ------------------------------------------------------------------------- */
+
+</script>
+
+<body>
+
+<!--Drop down menus for selecting line thickness and color-->
+<div id="canvasrelated">
+  <div id="controls">
+    Size:
+    <select id="thickness" class="fixed">
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+      <option value="5">5</option>
+      <option value="10">10</option>
+      <option value="20">20</option>
+    </select>
+
+    Color:
+    <select id="color">
+      <option value="#FFFFFF">#FFFFFF</option>
+      <option value="#AAAAAA">#AAAAAA</option>
+      <option value="#666666">#666666</option>
+      <option value="#000000">#000000</option>
+      <option value="#9BA16C">#9BA16C</option>
+      <option value="#CC8F2B">#CC8F2B</option>
+      <option value="#63631D">#63631D</option>
+    </select>
+    
+    Shape:
+   <select id="shape">
+     <option value="LINE">Line</option>
+     <option value="REC">Rectangle</option>
+     <option value="ERA">Eraser</option>
+
+   </select>
+    
+    <!--<input type ="checkbox" name="eraser"value="eraser"/>Eraser
+    
+    Others:
+    <select id="other">
+      <option value="eraser">Eraser</option>
+     
+    </select>-->
+  </div> 
+  
+  <!--The canvas where drawings will be displayed
+  <canvas id="canvas" z-index=1000 ></canvas>-->
+  
+  <!-- This div will contain all the canvases that are created dynamically--> 
+  <div id="canvasContainer" >
+  <canvas id="canvas" z-index=1000 ></canvas>
+  </div>
+</div>
+<br/>
+<br/>
+<br/>
+<br/>
+
+<hr />
+
+<div id="chat">
+  <form id="chatForm" action="javascript:sendChatMessage();">
+    Text chat
+    <input id="chatMessage" type="text" size="40">
+    <input type="submit" value="send message">
+  </form>
+  <textarea id="chatHistory" readonly cols="80" rows="6"></textarea>
+</div>
+
+ 
+<div>
+    </br>  </br>  </br>  </br>  </br>  </br>  </br>  </br>  </br>
+    </br>  </br>  </br>  </br>  </br>  </br>  </br>
+    </br>  </br>  </br>  </br>  </br>  </br>  </br>
+    </br>  </br>  </br>  </br>  </br>  </br>  </br>
+    <form id = "hide">
+      <input type="button" value="click to hide" onclick="hide()" />
+    </form>
+    
+</div>
+
+<hr />
+
+
+</body>
+</html> 

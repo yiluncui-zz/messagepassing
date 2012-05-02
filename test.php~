@@ -1,0 +1,6 @@
+<?php
+	$h = new PDO("sqlite:mydb.sqlite");
+	$ret = $h->query("select * from rooms");
+	echo $ret;
+	
+?>

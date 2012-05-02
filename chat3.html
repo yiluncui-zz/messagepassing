@@ -1,0 +1,187 @@
+<html>
+
+<link href="chat.css" rel="stylesheet" type="text/css" />
+<link href="jquery.notice.css" rel="stylesheet" type="text/css" />
+<link href="canvas.css" rel="stylesheet" type="text/css"/>
+
+
+<script>
+
+var content;
+var Signaling = top.Signaling;
+var chatHistory;
+var chatMessage;
+
+</script>
+
+<script src="UnionDraw.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<script src="jquery.notice.js"></script>
+
+<script>
+
+/*
+window.onload = function() {
+
+    chatHistory  = document.getElementById('chatHistory');
+    chatMessage  = document.getElementById('chatMessage');
+}*/
+
+
+function startChat() {
+    console.log("inside start chat");
+    for(chatIndex in Signaling.chatReady) {
+	if(Signaling.chatReady[chatIndex] == true) {
+	    
+	    //content.hidden = false;
+	    //document.getElementById('videoForm').hidden = false;
+	    
+	    //Signaling.Peer[chatIndex].onmessage   = receiveChatMessage;
+	    //Signaling.Peer[chatIndex].onaddstream = receiveVideoStream;
+	    
+	    if(chatHistory.value && chatHistory.value.length != 0) {
+		var hist = { prevHistory : chatHistory.value };
+		Signaling.Peer[chatIndex].send(JSON.stringify(hist));
+	    }
+	    Signaling.chatReady[chatIndex] = false;
+	    jQuery.noticeAdd({
+		text : "connecting with "+ chatIndex,
+		stay : false
+	    });
+	    /* Create a canvas for the new peer who we just connected with */
+	    //createPeerCanvas(chatIndex);
+	    //init_canvas_context();
+	}
+    }
+}
+
+
+/* -------------------------------------------------------------------------
+ * Instant messaging
+ * ------------------------------------------------------------------------- */
+
+function receiveChatMessage(e) {
+    var contents = JSON.parse(e.data);
+    
+    if(contents.command)
+	{
+		var path = contents.path;
+		console.log("command is : " + contents.command + "path is :" + contents.path);
+		if(contents.command == DrawingCommands.MOVE_TO)
+		{
+			console.log("a move command is received");
+			handleMoveMessage(path,contents.sendingPeer);
+		}
+		else if (contents.command == DrawingCommands.LINE_TO)
+		{
+			   console.log("a line to command is received");
+			   handlePathMessage(path);
+		}                
+		else if (contents.command == DrawingCommands.REC)
+		{
+			   console.log("a line to command is received");
+			   handleRecMessage(path);
+		}
+		else
+		{
+			console.log("something unusual");
+		}		
+	}
+    
+    if(contents.prevHistory) {
+	if(!chatHistory.value || chatHistory.value.length == 0) { 
+	    chatHistory.value += contents.prevHistory;
+	}
+    }
+    else {
+	chatHistory.value += contents.message + "\n";
+    }
+}
+
+function sendChatMessage() {
+    chatMessage.value = Signaling.fifoId + " : " + chatMessage.value;
+    chatHistory.value +=  chatMessage.value + "\n";
+    var contents = { message : chatMessage.value };
+    for(i in Signaling.Peer) {
+	Signaling.Peer[i].send(JSON.stringify(contents));
+    }
+    chatMessage.value = "";
+}
+
+/* -------------------------------------------------------------------------
+ * Voice & video
+ * ------------------------------------------------------------------------- */
+
+</script>
+
+<body>
+
+<!--Drop down menus for selecting line thickness and color-->
+<div id="canvasrelated">
+  <div id="controls">
+    Size:
+    <select id="thickness" class="fixed">
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+      <option value="5">5</option>
+      <option value="10">10</option>
+      <option value="20">20</option>
+    </select>
+    
+    Color:
+    <select id="color">
+      <option value="#FFFFFF">#FFFFFF</option>
+      <option value="#AAAAAA">#AAAAAA</option>
+      <option value="#666666">#666666</option>
+      <option value="#000000">#000000</option>
+      <option value="#9BA16C">#9BA16C</option>
+      <option value="#CC8F2B">#CC8F2B</option>
+      <option value="#63631D">#63631D</option>
+    </select>
+    
+    Shape:
+    <select id="shape">
+     <option value="LINE">Line</option>
+     <option value="REC">Rectangle</option>
+    </select>
+    
+    <!--<input type ="checkbox" name="eraser"value="eraser"/>Eraser
+	
+	Others:
+	<select id="other">
+	  <option value="eraser">Eraser</option>
+	  
+	</select>-->
+  </div> 
+  
+  <!--The canvas where drawings will be displayed
+      <canvas id="canvas" z-index=1000 ></canvas>-->
+  
+  <!-- This div will contain all the canvases that are created dynamically--> 
+  <div id="canvasContainer" >
+    <canvas id="canvas" z-index=1000 ></canvas>
+  </div>
+</div>
+<br/>
+<br/>
+<br/>
+<br/>
+
+<hr />
+
+  <div id="chat">
+    <form id="chatForm" action="javascript:sendChatMessage();">
+      Text chat
+      <input id="chatMessage" type="text" size="40">
+      <input type="submit" value="send message">
+    </form>
+    <textarea id="chatHistory" readonly cols="80" rows="6"></textarea>
+  </div>
+
+  <hr />
+
+
+</body>
+</html> 

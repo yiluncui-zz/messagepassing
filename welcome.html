@@ -1,0 +1,34 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html> <head>
+<title>Welcome to P2P draw something!</title>
+
+<script>
+
+function show_rooms() {
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "showrooms.php?", true);
+    xhr.send(null);
+    xhr.onreadystatechange = function() {
+	if(this.readyState === 4 && this.status === 200) {
+	    var roomsdiv = document.getElementById("rooms");
+	    roomsdiv.innerHTML = this.responseText;
+	}
+    }
+}
+</script>
+</head>
+
+<body>
+
+<h1>P2P Draw Something</h1>
+<form>
+<input type="button" onclick="window.location.href='create.html'" value="CREATE"/>
+<input type="button" onclick="show_rooms()" value="REFRESH ROOMS"/>
+</form>
+<div id="rooms">
+<table id="current_rooms">
+
+</table>
+</div>
+</body>
+</html>
