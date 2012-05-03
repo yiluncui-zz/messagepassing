@@ -11,6 +11,7 @@ var content;
 var Signaling = top.Signaling;
 var chatHistory;
 var chatMessage;
+var peerView = new Array();
 
 </script>
 
@@ -34,16 +35,14 @@ function startChat() {
 	if(Signaling.chatReady[chatIndex] == true) {
 	    //content.hidden = false;
 	    //document.getElementById('videoForm').hidden = false;
-	    
+	    Signaling.chatReady[chatIndex] = false;
 	    Signaling.Peer[chatIndex].onmessage   = receiveChatMessage;
-	    //Signaling.Peer[chatIndex].onaddstream = receiveVideoStream;
 	    
 	    /*if(chatHistory.value && chatHistory.value.length != 0) {
 	      var hist = { prevHistory : chatHistory.value };
 	      Signaling.Peer[chatIndex].send(JSON.stringify(hist));
 	      }*/
 	    
-	    Signaling.chatReady[chatIndex] = false;
 	    
 	    //alert("starting chat with: " + chatIndex);
 	    
@@ -67,10 +66,30 @@ function startChat() {
 		    //console.log("here2!!");
 	    	}		
 	    }
+
 	    jQuery.noticeAdd({
 		text : "connected with "+ Signaling.peerName[chatIndex],
 		stay : false
 	    });
+
+	    newPeerVideo = document.createElement('video');
+	    newPeerVideo.setAttribute('id', "peer"+chatIndex);
+	    newPeerVideo.setAttribute('width', '320');
+	    newPeerVideo.setAttribute('height', '240');
+	    newPeerVideo.setAttribute('autoplay',true);
+	    newPeerVideo.setAttribute('controls',true);
+	    document.getElementById('videos').appendChild(newPeerVideo);
+            peerView[chatIndex] = document.getElementById("peer"+chatIndex);
+	    
+	    Signaling.Peer[chatIndex].onaddstream = function receiveVideoStream(e) {
+    		peerView[chatIndex].src = webkitURL.createObjectURL(e.stream);
+	    };
+
+	    navigator.webkitGetUserMedia('audio user', function(stream) {
+	    	Signaling.Peer[chatIndex].addStream(stream);
+	    });
+	    addButton.disabled = "true";
+
 	}
     }
     console.log("leaving start chat");
@@ -180,6 +199,14 @@ function hide()
  * Voice & video
  * ------------------------------------------------------------------------- */
 
+function requestSelfVideo() {
+    navigator.webkitGetUserMedia('audio,video user', function(stream) {
+        selfView.muted = true;
+        selfView.src = webkitURL.createObjectURL(stream);
+    });
+    addButton.disabled = "true";
+}
+
 </script>
 
 <body>
@@ -242,13 +269,14 @@ function hide()
 <hr />
 
 <div id="chat">
-  <form id="chatForm" action="javascript:sendChatMessage();">
+    <form id="chatForm" action="javascript:sendChatMessage();" hidden="true">
     Text chat
     <input id="chatMessage" type="text" size="40">
     <input type="submit" value="send message">
   </form>
   <textarea id="chatHistory" readonly cols="80" rows="6"></textarea>
 </div>
+
 
  
 <div>
@@ -257,8 +285,16 @@ function hide()
     </br>  </br>  </br>  </br>  </br>  </br>  </br>
     </br>  </br>  </br>  </br>  </br>  </br>  </br>
     <form id = "hide">
-      <input type="button" value="click to hide" onclick="hide()" />
+    <input type="button" value="click to hide" onclick="hide()" />
+    <input id="addButton" type="button" value="add webcam" onclick="requestSelfVideo();"/>
+
     </form>
+<div id="videos">
+  <video id="selfView"
+	 width="320" height="240" autoplay controls>
+  </video>
+</div>
+
     
 </div>
 

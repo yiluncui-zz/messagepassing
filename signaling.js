@@ -109,6 +109,7 @@ var Signaling = {
 	else {
 	    //This is a SDP message
 	    var sdpMsg = JSON.parse(msg);
+	    if(sdpMsg.src in Signaling.Peer) return;
 	    sdpMsg.sdp = sdpMsg.sdp.replace(/\\r\\n/g,"\r\n").replace(/\\n/g,"\n");
 	    console.log("sdpMsg's src : " +sdpMsg.src + " name is : " + sdpMsg.peerName );
 	    console.log("Peers that I have fifoId's for: ");
