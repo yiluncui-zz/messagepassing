@@ -831,8 +831,8 @@ function touchDownListener (e) {
         e.preventDefault();
     }
     // Determine where the user touched screen.
-    var touchX = e.changedTouches[0].clientX - canvas.offsetLeft;
-    var touchY = e.changedTouches[0].clientY - canvas.offsetTop;
+    var touchX = e.changedTouches[0].clientX - $(canvas).offset().left;
+    var touchY = e.changedTouches[0].clientY - $(canvas).offset().top;
     // A second "touch start" event may occur if the user touches the screen with
     // two fingers. Ignore the second event if the pen is already down.
     if (!isPenDown) {
@@ -846,8 +846,8 @@ function touchDownListener (e) {
 function touchMoveListener (e) {
     hasTouch = true;
     e.preventDefault();
-    var touchX = e.changedTouches[0].clientX - canvas.offsetLeft;
-    var touchY = e.changedTouches[0].clientY - canvas.offsetTop;
+    var touchX = e.changedTouches[0].clientX - $(canvas).offset().left;
+    var touchY = e.changedTouches[0].clientY - $(canvas).offset().top;
     // Draw a line to the position being touched.
     penMove(touchX, touchY);
 }
@@ -874,9 +874,9 @@ function pointerDownListener (e) {
     // Internet Explorer uses window.event; other browsers use the event parameter
     var event = e || window.event; 
     // Determine where the user clicked the mouse.
-    console.log("in pointer down listener, canvas.offsetLeft is :" + canvas.offsetLeft + "canvas.offsetTop is:" + canvas.offsetTop);
-    var mouseX = event.clientX - canvas.offsetLeft;
-    var mouseY = event.clientY - (2*canvas.offsetTop) ;
+    console.log("in pointer down listener, canvas.offsetLeft is :" + $(canvas).offset().left + "canvas.offsetTop is:" + $(canvas).offset().top);
+    var mouseX = event.clientX - $(canvas).offset().left;
+    var mouseY = event.clientY - $(canvas).offset().top;
 
     // Move the drawing pen to the position that was clicked
     penDown(mouseX, mouseY);
@@ -903,8 +903,8 @@ function pointerMoveListener (e) {
     }
 
     var event = e || window.event; // IE uses window.event, not e
-    var mouseX = event.clientX - canvas.offsetLeft;
-    var mouseY = event.clientY - (2* canvas.offsetTop);
+    var mouseX = event.clientX - $(canvas).offset().left;
+    var mouseY = event.clientY - $(canvas).offset().top;
 
 
     // Draw a line if the pen is down
