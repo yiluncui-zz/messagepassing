@@ -19,8 +19,50 @@ var Signaling = {
     myName : null,
     peerName : new Array(),
     peerColor : new Array(),
-    
-    
+    heartbeats : new Array(),
+    myMaxBeat : 0,
+    startedBeating : false,
+
+    sendHeartbeat : function() {
+	startedBeating = true;
+	var maxBeat = Signaling.myMaxBeat;
+	for(i in Signaling.heartbeats) {
+	    if(i in Signaling.heartbeats)
+		if(maxBeat - Signaling.heartbeats[i]> 5) Signaling.dropPeer(i);
+	}
+	for(i in Signaling.heartbeats) {
+	    Signaling.Peer[i].send(JSON.stringify({ heartbeat : Signaling.fifoId }));
+	}
+	Signaling.myMaxBeat +=1;
+    },    
+
+    dropPeer : function(i) {
+	jQuery.noticeAdd({
+	    text : "peer " + Signaling.peerName[i] + " left",
+	    stay : false
+	});
+	delete Signaling.heartbeats[i];
+	delete Signaling.remoteFifoId[i];
+	delete Signaling.chatReady[i];
+	delete Signaling.Peer[i];
+	var xhr = new XMLHttpRequest();
+	xhr.onreadystatechange = function() {};
+	xhr.open("POST", "evict.php", true);
+	xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded"); 
+	xhr.send("id=" + i, true);
+    },
+
+    recvHeartbeat : function(i) {
+	if(i in Signaling.heartbeats) {
+	    if(Signaling.heartbeats[i]==Signaling.myMaxBeat) {
+		Signaling.heartbeats[i]=Signaling.myMaxBeat+1;
+	    } else {
+		Signaling.heartbeats[i]=Signaling.myMaxBeat;
+	    }
+	}
+    },
+
+
     TURN_CONFIG : "TURN 193.234.219.124:3478",
     //TURN_CONFIG : "NONE",
 

@@ -21,7 +21,7 @@ foreach($result as $row) {
     
   fputs($fd, "data: " . json_encode($msgArray) . "\n");
   fclose($fd);
-  //sleep(5);
+  sleep(5);
 }
 
 

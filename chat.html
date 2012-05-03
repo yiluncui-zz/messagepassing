@@ -12,12 +12,13 @@ var Signaling = top.Signaling;
 var chatHistory;
 var chatMessage;
 var peerView = new Array();
+var myStream = null;
 
 </script>
-
-<script src="UnionDraw.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
 <script src="jquery.notice.js"></script>
+<script src="UnionDraw.js"></script>
+
 
 <script>
 
@@ -31,13 +32,16 @@ window.onload = function() {
 
 function startChat() {
     console.log("inside start chat");
+    if(!Signaling.startedBeating) setInterval(Signaling.sendHeartbeat, 1*1000);
     for(chatIndex in Signaling.chatReady) {
 	if(Signaling.chatReady[chatIndex] == true) {
 	    //content.hidden = false;
 	    //document.getElementById('videoForm').hidden = false;
-	    Signaling.chatReady[chatIndex] = false;
-	    Signaling.Peer[chatIndex].onmessage   = receiveChatMessage;
 	    
+	    Signaling.Peer[chatIndex].onmessage   = receiveChatMessage;
+	    Signaling.chatReady[chatIndex] = false;
+	    
+
 	    /*if(chatHistory.value && chatHistory.value.length != 0) {
 	      var hist = { prevHistory : chatHistory.value };
 	      Signaling.Peer[chatIndex].send(JSON.stringify(hist));
@@ -72,6 +76,8 @@ function startChat() {
 		stay : false
 	    });
 
+	    Signaling.heartbeats[chatIndex] = Signaling.myMaxBeat;
+
 	    newPeerVideo = document.createElement('video');
 	    newPeerVideo.setAttribute('id', "peer"+chatIndex);
 	    newPeerVideo.setAttribute('width', '320');
@@ -86,9 +92,11 @@ function startChat() {
 	    };
 
 	    navigator.webkitGetUserMedia('audio user', function(stream) {
-	    	Signaling.Peer[chatIndex].addStream(stream);
+		Signaling.Peer[chatIndex].addStream(stream);
 	    });
 	    addButton.disabled = "true";
+	    
+	    
 
 		/*var peerConn = Signaling.Peer[chatIndex];
 		
@@ -125,6 +133,11 @@ function startChat() {
 function receiveChatMessage(e) {
     var contents = JSON.parse(e.data);
     
+    if(contents.heartbeat) {
+	Signaling.recvHeartbeat(contents.heartbeat);
+	return;
+    }
+
     if(contents.command)
     {
 
@@ -265,7 +278,7 @@ function requestSelfVideo() {
     
     Shape:
    <select id="shape">
-     <option value="LINE">Line</option>
+     <option value="LINE" selected="selected">Line</option>
      <option value="REC">Rectangle</option>
      <option value="ERA">Eraser</option>
 
