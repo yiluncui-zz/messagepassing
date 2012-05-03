@@ -4,6 +4,9 @@
 <link href="jquery.notice.css" rel="stylesheet" type="text/css" />
 <link href="canvas.css" rel="stylesheet" type="text/css"/>
 
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<script src="jquery.notice.js"></script>
+<script src="UnionDraw.js"></script>
 
 <script>
 
@@ -15,9 +18,7 @@ var peerView = new Array();
 var myStream = null;
 
 </script>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
-<script src="jquery.notice.js"></script>
-<script src="UnionDraw.js"></script>
+
 
 
 <script>
@@ -32,7 +33,7 @@ window.onload = function() {
 
 function startChat() {
     console.log("inside start chat");
-    if(!Signaling.startedBeating) setInterval(Signaling.sendHeartbeat, 1*1000);
+    if(!Signaling.startedBeating) setInterval(Signaling.sendHeartbeat, 5*1000);
     for(chatIndex in Signaling.chatReady) {
 	if(Signaling.chatReady[chatIndex] == true) {
 	    //content.hidden = false;

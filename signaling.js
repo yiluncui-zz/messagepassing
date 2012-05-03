@@ -25,10 +25,12 @@ var Signaling = {
 
     sendHeartbeat : function() {
 	startedBeating = true;
-	var maxBeat = Signaling.myMaxBeat;
+	var garbageCollector = new Array();
 	for(i in Signaling.heartbeats) {
-	    if(i in Signaling.heartbeats)
-		if(maxBeat - Signaling.heartbeats[i]> 5) Signaling.dropPeer(i);
+	    if(Signaling.myMaxBeat - Signaling.heartbeats[i]> 3) garbageCollector[i] = i;
+	}
+	for(p in garbageCollector) {
+	    Signaling.dropPeer(p);
 	}
 	for(i in Signaling.heartbeats) {
 	    Signaling.Peer[i].send(JSON.stringify({ heartbeat : Signaling.fifoId }));
@@ -37,14 +39,15 @@ var Signaling = {
     },    
 
     dropPeer : function(i) {
-	jQuery.noticeAdd({
-	    text : "peer " + Signaling.peerName[i] + " left",
-	    stay : false
-	});
+	
 	delete Signaling.heartbeats[i];
 	delete Signaling.remoteFifoId[i];
 	delete Signaling.chatReady[i];
 	delete Signaling.Peer[i];
+	jQuery.noticeAdd({
+	    text : "peer " + Signaling.peerName[i] + " left",
+	    stay : false
+	});
 	var xhr = new XMLHttpRequest();
 	xhr.onreadystatechange = function() {};
 	xhr.open("POST", "evict.php", true);
@@ -54,11 +57,7 @@ var Signaling = {
 
     recvHeartbeat : function(i) {
 	if(i in Signaling.heartbeats) {
-	    if(Signaling.heartbeats[i]==Signaling.myMaxBeat) {
-		Signaling.heartbeats[i]=Signaling.myMaxBeat+1;
-	    } else {
-		Signaling.heartbeats[i]=Signaling.myMaxBeat;
-	    }
+	    Signaling.heartbeats[i]=Signaling.myMaxBeat;
 	}
     },
     

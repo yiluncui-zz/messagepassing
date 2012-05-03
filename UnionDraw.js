@@ -1154,7 +1154,7 @@ function clearRect (cxt,x1, y1, x2, y2) {
 }
 
 function erase(ctx,x,y){
-    ctx.clearRect(x,y,10,10);
+    ctx.clearRect(x,y,20,20);
 }
 
 //==============================================================================
