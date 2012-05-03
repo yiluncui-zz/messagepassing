@@ -17,11 +17,11 @@ foreach($result as $row) {
   $fd = fopen("/var/run/starchat/$fifoid", "w");
   if (! $fd) die("cannot open FIFO");
   
-  error_log("!!!".json_encode($msgArray));
+  error_log(json_encode($msgArray)."==>$roomid");
     
   fputs($fd, "data: " . json_encode($msgArray) . "\n");
   fclose($fd);
-  sleep(5);
+  //sleep(5);
 }
 
 

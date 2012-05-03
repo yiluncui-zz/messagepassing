@@ -132,7 +132,7 @@ function init () {
 function checkPeerConnections() {
     for(i in Signaling.Peer) {
 	console.log("Peer "+i+"'s status is : "+Signaling.Peer[i].readyState);
-	if(Signaling.Peer[i].readyState != 0) {
+	if(Signaling.Peer[i].readyState == 3 || Signaling.Peer[i].readyState == 4) {
 	    jQuery.noticeAdd({ text : "peer "+i+ " has dropped", stay : false });
 	}
     }
@@ -208,25 +208,27 @@ function createPeerCanvas2(peerFifoId)
 
     var canvasContainer = document.getElementById("canvasContainer");
 
+    var origCanvas = document.getElementById("canvas");
     var newCanvasContainer = document.createElement('div');
-    newCanvasContainer.style.position="absolute";
+    newCanvasContainer.style.position=origCanvas.style.position;
     // Set to 100% so that it will have the dimensions of the document
-    newCanvasContainer.style.left="0px";
-    newCanvasContainer.style.top="35px";
-    newCanvasContainer.style.width="600px";
-    newCanvasContainer.style.height="400px";
-    newCanvasContainer.style.display = "block"
+    newCanvasContainer.style.left=origCanvas.style.left;
+    newCanvasContainer.style.top=origCanvas.style.top;
+    newCanvasContainer.style.width=origCanvas.style.width;
+    newCanvasContainer.style.height=origCanvas.style.height;
+    newCanvasContainer.style.display = "block";
         //canvasContainer.style.backgroundColor="#333333";
-        newCanvasContainer.style.zIndex="1";
+    newCanvasContainer.style.zIndex="1";
     newCanvasContainer.id = peerFifoId;
     console.log("&&&&&&creating a new canvas for peer :"+peerFifoId+"name is :" + Signaling.peerName[peerFifoId]);
-	newCanvasContainer.id = Signaling.peerName[peerFifoId];
+    newCanvasContainer.id = Signaling.peerName[peerFifoId];
 	
 
 
     var myCanvas = document.createElement('canvas');
-    myCanvas.style.width = canvasContainer.scrollWidth+"px";
-    myCanvas.style.height = canvasContainer.scrollHeight+"px";
+    var hostCanvas = document.getElementById('canvas');
+    myCanvas.style.width = hostCanvas.style.width;
+    myCanvas.style.height = hostCanvas.style.height;
     // You must set this otherwise the canvas will be streethed to fit the container
     myCanvas.width=canvasContainer.scrollWidth;
     myCanvas.height=canvasContainer.scrollHeight;
@@ -246,7 +248,7 @@ function createPeerCanvas2(peerFifoId)
     newCanvasContainer.appendChild(myCanvas);
     canvasContainer.appendChild(newCanvasContainer);
 
-    var origCanvas = document.getElementById("canvas");
+    
     console.log("orig canvas z-index is :" + origCanvas.style.zIndex);
     origCanvas.style.zIndex = "1005";
     Signaling.peerColor[peerFifoId] = defaultLineColor;
@@ -1007,35 +1009,37 @@ function penDown (x, y) {
 
 
     switch (localShape){
-        case DrawingShape.line:
-            broadcastPathIntervalID = setInterval(broadcastPath, 500);
-            break;
-
+    case DrawingShape.line:
+        broadcastPathIntervalID = setInterval(broadcastPath, 500);
+        break;
+	
         case DrawingShape.rec:
-            //broadcastPathIntervalID = setInterval(broadcastRec, 500);
-            recRecord.x1 = x;
-            recRecord.y1 = y;
-
-            ghostcanvas = document.createElement('canvas');
-            ghostcanvas.style.width = canvasContainer.scrollWidth+"px";
-            ghostcanvas.style.height = canvasContainer.scrollHeight+"px";
-            // You must set this otherwise the canvas will be streethed to fit the container
-            ghostcanvas.width=canvasContainer.scrollWidth;
-            ghostcanvas.height=canvasContainer.scrollHeight;
-            ghostcanvas.style.overflow = 'visible';
-            ghostcanvas.style.position = 'absolute'
-
-                ghostcanvas.height = 600;
-            ghostcanvas.width = 800;
-            //ghostcanvas.style.backgroundColor = "CC8F2B";
-            ghostcanvas.id = "ghcanvas";
-            gcontext = ghostcanvas.getContext('2d');
-            canvasContainer.appendChild(ghostcanvas);
-
-            break;
-        case DrawingShape.era:
-            broadcastPathIntervalID = setInterval(broadcastEra, 500);
-            break;
+        //broadcastPathIntervalID = setInterval(broadcastRec, 500);
+        recRecord.x1 = x;
+        recRecord.y1 = y;
+	
+        ghostcanvas = document.createElement('canvas');
+	var hostCanvas = document.getElementById('canvas');
+        ghostcanvas.style.width = hostCanvas.style.width;
+        ghostcanvas.style.height = hostCanvas.style.width;
+        // You must set this otherwise the canvas will be streethed to fit the container
+        ghostcanvas.width=canvasContainer.scrollWidth;
+        ghostcanvas.height=canvasContainer.scrollHeight;
+        ghostcanvas.style.overflow = 'visible';
+        ghostcanvas.style.position = 'absolute'
+	
+        //ghostcanvas.height = 600;
+        //ghostcanvas.width = 800;
+        //ghostcanvas.style.backgroundColor = "CC8F2B";
+        ghostcanvas.id = "ghcanvas";
+	ghostcanvas.style.zIndex = "1006"
+        gcontext = ghostcanvas.getContext('2d');
+        canvasContainer.appendChild(ghostcanvas);
+	
+        break;
+    case DrawingShape.era:
+        broadcastPathIntervalID = setInterval(broadcastEra, 500);
+        break;
     }
 
 }
