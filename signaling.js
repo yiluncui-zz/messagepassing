@@ -19,7 +19,6 @@ var Signaling = {
     myName : null,
     peerName : new Array(),
     peerColor : new Array(),
-<<<<<<< HEAD
     heartbeats : new Array(),
     myMaxBeat : 0,
     startedBeating : false,
@@ -62,12 +61,7 @@ var Signaling = {
 	    }
 	}
     },
-
-
-=======
-    remoteDataChannel : new Array(),
     
->>>>>>> 3a8f802c1c0368dbb0fe92a64eee3806cd7ab187
     TURN_CONFIG : "TURN 193.234.219.124:3478",
     //TURN_CONFIG : "NONE",
 
