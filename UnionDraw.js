@@ -146,9 +146,9 @@ function initCanvas () {
 
     canvasContainer.style.position="absolute";
     // Set to 100% so that it will have the dimensions of the document
-    canvasContainer.style.left="0px";
+    canvasContainer.style.left="50px";
     canvasContainer.style.top="35px";
-    canvasContainer.style.width="600px";
+    canvasContainer.style.width="800px";
     canvasContainer.style.height="400px";
     canvasContainer.style.backgroundColor="#333333";
     canvasContainer.style.zIndex="1";
@@ -163,7 +163,7 @@ function initCanvas () {
     }
 
     // Size canvas
-    canvas.width  = 600;
+    canvas.width  = 800;
     canvas.height = 400;
 
     // Retrieve context reference, used to execute canvas drawing commands
@@ -833,8 +833,8 @@ function touchDownListener (e) {
         e.preventDefault();
     }
     // Determine where the user touched screen.
-    var touchX = e.changedTouches[0].clientX - $(canvas).offset().left;
-    var touchY = e.changedTouches[0].clientY - $(canvas).offset().top;
+    var touchX = e.changedTouches[0].clientX - $(canvas).offset().left + $('#chat').scrollLeft();
+    var touchY = e.changedTouches[0].clientY - $(canvas).offset().top + $('#chat').scrollTop();
     // A second "touch start" event may occur if the user touches the screen with
     // two fingers. Ignore the second event if the pen is already down.
     if (!isPenDown) {
@@ -848,8 +848,8 @@ function touchDownListener (e) {
 function touchMoveListener (e) {
     hasTouch = true;
     e.preventDefault();
-    var touchX = e.changedTouches[0].clientX - $(canvas).offset().left;
-    var touchY = e.changedTouches[0].clientY - $(canvas).offset().top;
+    var touchX = e.changedTouches[0].clientX - $(canvas).offset().left + $('#chat').scrollLeft();
+    var touchY = e.changedTouches[0].clientY - $(canvas).offset().top + $('#chat').scrollTop();
     // Draw a line to the position being touched.
     penMove(touchX, touchY);
 }
@@ -877,8 +877,8 @@ function pointerDownListener (e) {
     var event = e || window.event; 
     // Determine where the user clicked the mouse.
     console.log("in pointer down listener, canvas.offsetLeft is :" + $(canvas).offset().left + "canvas.offsetTop is:" + $(canvas).offset().top);
-    var mouseX = event.clientX - $(canvas).offset().left;
-    var mouseY = event.clientY - $(canvas).offset().top;
+    var mouseX = event.clientX - $(canvas).offset().left + $('#chat').scrollLeft();
+    var mouseY = event.clientY - $(canvas).offset().top + $('#chat').scrollTop();
 
     // Move the drawing pen to the position that was clicked
     penDown(mouseX, mouseY);
@@ -905,8 +905,8 @@ function pointerMoveListener (e) {
     }
 
     var event = e || window.event; // IE uses window.event, not e
-    var mouseX = event.clientX - $(canvas).offset().left;
-    var mouseY = event.clientY - $(canvas).offset().top;
+    var mouseX = event.clientX - $(canvas).offset().left + $('#chat').scrollLeft();
+    var mouseY = event.clientY - $(canvas).offset().top + $('#chat').scrollTop();
 
 
     // Draw a line if the pen is down
@@ -1026,7 +1026,7 @@ function penDown (x, y) {
         ghostcanvas.width=canvasContainer.scrollWidth;
         ghostcanvas.height=canvasContainer.scrollHeight;
         ghostcanvas.style.overflow = 'visible';
-        ghostcanvas.style.position = 'absolute'
+        ghostcanvas.style.position = 'absolute';
 	
         //ghostcanvas.height = 600;
         //ghostcanvas.width = 800;

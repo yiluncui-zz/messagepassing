@@ -95,7 +95,6 @@ function startChat() {
 	    navigator.webkitGetUserMedia('audio user', function(stream) {
 		Signaling.Peer[chatIndex].addStream(stream);
 	    });
-	    addButton.disabled = "true";
 	    
 	    
 
@@ -250,7 +249,7 @@ function requestSelfVideo() {
 
 </script>
 
-<body>
+<body style="margin:0">
 
 <!--Drop down menus for selecting line thickness and color-->
 <div id="canvasrelated">

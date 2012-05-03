@@ -44,6 +44,7 @@ var Signaling = {
 	delete Signaling.remoteFifoId[i];
 	delete Signaling.chatReady[i];
 	delete Signaling.Peer[i];
+	$('#peer'+i).remove()
 	jQuery.noticeAdd({
 	    text : "peer " + Signaling.peerName[i] + " left",
 	    stay : false
