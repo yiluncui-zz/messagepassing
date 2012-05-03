@@ -90,6 +90,28 @@ function startChat() {
 	    });
 	    addButton.disabled = "true";
 
+		/*var peerConn = Signaling.Peer[chatIndex];
+		
+		Signaling.remoteDataChannel[chatIndex] = peerConn.createDataChannel('mylabel');
+		Signaling.remoteDataChannel[chatIndex].onmessage = function (evt) {
+			console.log("&&&&&&&&&&& received a message on data channel!!!");
+		}
+		Signaling.remoteDataChannel[chatIndex].send("helllo on data channel!!");
+		
+		peerConn.ondatachannel = function (evt) {
+		Signaling.remoteDataChannel[chatIndex] = evt.channel;
+
+		chan.onmessage = function (evt) {
+		    console.log("&&&&&&&&&&& received a message on data channel!!!");
+		    // use evt.data
+		};
+
+		chan.onclose = function () {
+		    // remote side closed the data channel
+		};
+	}*/
+	
+
 	}
     }
     console.log("leaving start chat");
@@ -105,7 +127,11 @@ function receiveChatMessage(e) {
     
     if(contents.command)
     {
-	Signaling.drawHistory.push(e.data);	
+
+	if(contents.command != DrawingCommands.HISTORY)
+	{
+		Signaling.drawHistory.push(e.data);	
+	}	
 	var path = contents.path;
 	console.log("command is : " + contents.command);
 	
@@ -126,11 +152,12 @@ function receiveChatMessage(e) {
 	}
 	else if (contents.command == DrawingCommands.SET_COLOR)
 	{
-	    console.log("a  SET_COLOR command is received");
+	    console.log("a SET_COLOR command is received");
 	    handleColorMessage(path,contents.sendingPeer);
 	}
 	else if (contents.command == DrawingCommands.HISTORY)
 	{
+	    Signaling.drawHistory.push(contents.history);
 	    console.log("a history command is received" );
 	    handleHistoryMessage(contents.history);
 	    //if(Signaling.seenHistory == false)
@@ -139,12 +166,12 @@ function receiveChatMessage(e) {
 	    /*The path value here is actually a comma separated string of commands */
 	    
 	    //}	
-        } 
-        else if (contents.command == DrawingCommands.ERA)
-        {
-            console.log("an ERA command is received");
-            handleERAMessage(contents.path,contents.sendingPeer);
-        }
+    } 
+    else if (contents.command == DrawingCommands.ERA)
+    {
+        console.log("an ERA command is received");
+        handleERAMessage(contents.path,contents.sendingPeer);
+    }
 	else
 	{
 	    console.log("something unusual");
