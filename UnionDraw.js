@@ -502,12 +502,15 @@ function handleHistoryMessage(historyCommand)
 {
     console.log("history command is :" + historyCommand);
     var historyContents = JSON.parse(historyCommand);
+	var sendingPeer = historyContents.sendingPeer;
+	var sendingPeerName = historyContents.peerName;
 
     if(Signaling.CanvasContext[historyContents.sendingPeer] == undefined)
     {
         //Create a canvas if it does not already exist
-		console.log("canvas not present yet, creating a canvas for fifoId" + historyContents.sendingPeer);
-        createPeerCanvas2(historyContents.sendingPeer);
+		console.log("canvas not present yet, creating a canvas for fifoId" + historyContents.sendingPeer + "peername :" + sendingPeerName);
+		Signaling.peerName[sendingPeer] = sendingPeerName;
+        createPeerCanvas2(sendingPeer);
     }
 
     if(historyContents.seqNum <= Signaling.peerSeqNum[historyContents.sendingPeer])
@@ -616,7 +619,7 @@ function broadcastPath () {
     console.log("should send buffered path to all participants here" + bufferedPath.join());
 
     var contents;
-    contents = { "command" : DrawingCommands.LINE_TO, "path" : bufferedPath.join(), "sendingPeer" : Signaling.fifoId, "seqNum" : Signaling.mySeqNum };
+    contents = { "command" : DrawingCommands.LINE_TO, "path" : bufferedPath.join(), "sendingPeer" : Signaling.fifoId, "peerName" : Signaling.myName, "seqNum" : Signaling.mySeqNum };
 
     Signaling.mySeqNum++;
 
@@ -651,7 +654,8 @@ function broadcastRec () {
     console.log("points are :" + points);
 
     var contents;
-    contents = { "command" : DrawingCommands.REC, "path" : points, "sendingPeer" : Signaling.fifoId, "seqNum" : Signaling.mySeqNum };
+    contents = { "command" : DrawingCommands.REC, "path" : points, "sendingPeer" : Signaling.fifoId, "peerName" : Signaling.myName, "seqNum" : Signaling.mySeqNum };
+
     Signaling.mySeqNum ++;
     console.log("inside broadcast PATH");
 
@@ -683,7 +687,7 @@ function broadcastMove (x, y) {
       "", 
       x + "," + y);*/
     var contents;
-    contents = { "command" : DrawingCommands.MOVE_TO, "path" : x + "," + y, "sendingPeer" : Signaling.fifoId, "seqNum" : Signaling.mySeqNum };
+    contents = { "command" : DrawingCommands.MOVE_TO, "path" : x + "," + y, "sendingPeer" : Signaling.fifoId, "peerName" : Signaling.myName, "seqNum" : Signaling.mySeqNum };
 
     Signaling.mySeqNum++;
 
@@ -709,7 +713,7 @@ function broadcastColor (color) {
       "", 
       x + "," + y);*/
     var contents;
-    contents = { "command" : DrawingCommands.SET_COLOR, "path" : color, "sendingPeer" : Signaling.fifoId, "seqNum" : Signaling.mySeqNum };
+    contents = { "command" : DrawingCommands.SET_COLOR, "path" : color, "sendingPeer" : Signaling.fifoId, "peerName" : Signaling.myName, "seqNum" : Signaling.mySeqNum };
 
     Signaling.mySeqNum++;
     console.log("sending a SET_COLOR command");
@@ -731,7 +735,7 @@ function broadcastEra () {
     //console.log("should send buffered path to all participants here" + bufferedPath.join());
 
     var contents;
-    contents = { "command" : DrawingCommands.ERA, "path" : eraseBuffer.join(), "sendingPeer" : Signaling.fifoId , "seqNum" : Signaling.mySeqNum };
+    contents = { "command" : DrawingCommands.ERA, "path" : eraseBuffer.join(), "sendingPeer" : Signaling.fifoId , "peerName" : Signaling.myName, "seqNum" : Signaling.mySeqNum };
     
     Signaling.mySeqNum++;
 
