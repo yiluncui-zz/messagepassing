@@ -19,6 +19,7 @@ var Signaling = {
     myName : null,
     peerName : new Array(),
     peerColor : new Array(),
+<<<<<<< HEAD
     heartbeats : new Array(),
     myMaxBeat : 0,
     startedBeating : false,
@@ -63,6 +64,10 @@ var Signaling = {
     },
 
 
+=======
+    remoteDataChannel : new Array(),
+    
+>>>>>>> 3a8f802c1c0368dbb0fe92a64eee3806cd7ab187
     TURN_CONFIG : "TURN 193.234.219.124:3478",
     //TURN_CONFIG : "NONE",
 
@@ -75,6 +80,7 @@ var Signaling = {
 	if (myName != null && myName !="")
   	{
   		console.log("Name entered:" + myName);
+  		Signaling.myName = myName;
   	}
   	else
   	{
@@ -138,8 +144,8 @@ var Signaling = {
 		sendClient.open("POST", "post2.php", true);
 		sendClient.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
 		var escaped = msgcontents.replace(/\r\n/g,"\\r\\n").replace(/\n/g,"\\n");
-		console.log("sending my name which is :" + myName);
-		var sdpMsg = { src : Signaling.fifoId , sdp : encodeURIComponent(escaped), peerName : myName };
+		console.log("sending my name which is :" + Signaling.myName);
+		var sdpMsg = { src : Signaling.fifoId , sdp : encodeURIComponent(escaped), peerName : Signaling.myName };
 		//alert(JSON.stringify(sdpMsg));
 		sendClient.send("id=" + msg + "&msg=" + JSON.stringify(sdpMsg) , true);
 		//alert("finished sending sdp msg to peer : " + msg);
@@ -180,8 +186,8 @@ var Signaling = {
 		    sendClient.open("POST", "post2.php", true);
 		    sendClient.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
 		    var escaped = msgcontents.replace(/\r\n/g,"\\r\\n").replace(/\n/g,"\\n");
-		    console.log("sending my name which is :" + myName);
-		    var mySdpMsg = { src : Signaling.fifoId , sdp : encodeURIComponent(escaped) , peerName : myName };
+		    console.log("sending my name which is :" + Signaling.myName);
+		    var mySdpMsg = { src : Signaling.fifoId , sdp : encodeURIComponent(escaped) , peerName : Signaling.myName };
 		    //alert(JSON.stringify(mySdpMsg));
 		    sendClient.send("id=" + new_msg + "&msg=" + JSON.stringify(mySdpMsg) , true);
 		    //alert("finished sending sdp msg to peer : " + new_msg);
